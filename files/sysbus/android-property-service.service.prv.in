@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.android.properties
+Exec=@WEBOS_INSTALL_SBINDIR@/android-property-service
+Type=static
