@@ -27,6 +27,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include "property_service.h"
+
 #define SHUTDOWN_GRACE_SECONDS		2
 #define VERSION						"0.1"
 
@@ -137,6 +139,7 @@ int main(int argc, char **argv)
 	GOptionContext *context;
 	GError *err = NULL;
 	guint signal;
+	struct property_service *service;
 
 	g_log_set_handler (NULL, G_LOG_LEVEL_MASK, log_handler, NULL);
 
@@ -174,9 +177,13 @@ int main(int argc, char **argv)
 
 	event_loop = g_main_loop_new(NULL, FALSE);
 
+	service = property_service_create();
+
 	g_main_loop_run(event_loop);
 
 	g_source_remove(signal);
+
+	property_service_free(service);
 
 	g_main_loop_unref(event_loop);
 
