@@ -95,18 +95,18 @@ cleanup:
 		j_release(&reply_obj);
 
 	if (!jis_null(props_obj))
-		j_release(props_obj);
+		j_release(&props_obj);
 
 	return true;
 }
 
 bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 {
-	struct property_service *service = user_data;
 	jvalue_ref parsed_obj = NULL;
 	jvalue_ref keys_obj = NULL;
 	jvalue_ref reply_obj = NULL;
-	jvalue_ref values_obj = NULL;
+	jvalue_ref props_obj = NULL;
+	jvalue_ref prop_obj = NULL;
 	char *payload, value[PROP_VALUE_MAX];
 	int n;
 	raw_buffer key_buf;
@@ -125,7 +125,7 @@ bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 	}
 
 	reply_obj = jobject_create();
-	values_obj = jobject_create();
+	props_obj = jarray_create(NULL);
 
 	for (n = 0; n < jarray_size(keys_obj); n++) {
 		jvalue_ref key_obj = jarray_get(keys_obj, n);
@@ -140,10 +140,13 @@ bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 
 		property_get(key_buf.m_str, value, "");
 
-		jobject_put(values_obj, jstring_create(key_buf.m_str), jstring_create(value));
+		prop_obj = jobject_create();
+		jobject_put(prop_obj, jstring_create(key_buf.m_str), jstring_create(value));
+
+		jarray_append(props_obj, prop_obj);
 	}
 
-	jobject_put(reply_obj, J_CSTR_TO_JVAL("values"), values_obj);
+	jobject_put(reply_obj, J_CSTR_TO_JVAL("properties"), props_obj);
 	jobject_put(reply_obj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
 
 	if (!luna_service_message_validate_and_send(handle, message, reply_obj))
