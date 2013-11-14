@@ -37,16 +37,65 @@ struct property_service {
 
 bool set_property_cb(LSHandle *handle, LSMessage *message, void *user_data);
 bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data);
+bool get_all_properties_cb(LSHandle *handle, LSMessage *message, void *user_data);
 
 static LSMethod property_service_methods[]  = {
 	{ "setProperty", set_property_cb },
 	{ "getProperty", get_property_cb },
+	{ "getAllProperties", get_all_properties_cb },
 	{ NULL, NULL }
 };
 
 bool set_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 {
 	struct property_service *service = user_data;
+
+	return true;
+}
+
+struct property_list {
+	int count;
+	char** items;
+};
+
+static void record_prop(const char *key, const char *value, void *user_data)
+{
+	jvalue_ref props_obj = user_data;
+	jvalue_ref prop_obj = NULL;
+
+	prop_obj = jobject_create();
+	jobject_put(prop_obj, jstring_create(key), jstring_create(value));
+
+	jarray_append(props_obj, prop_obj);
+}
+
+bool get_all_properties_cb(LSHandle *handle, LSMessage *message, void *user_data)
+{
+	jvalue_ref reply_obj = NULL;
+	jvalue_ref props_obj = NULL;
+	struct property_list list;
+
+	reply_obj = jobject_create();
+	props_obj = jarray_create(NULL);
+
+	memset(&list, 0, sizeof(struct property_list));
+	if (property_list(record_prop, props_obj) < 0) {
+		luna_service_message_reply_error_internal(handle, message);
+		goto cleanup;
+	}
+
+	jobject_put(reply_obj, J_CSTR_TO_JVAL("properties"), props_obj);
+	jobject_put(reply_obj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
+
+	if (!luna_service_message_validate_and_send(handle, message, reply_obj))
+		goto cleanup;
+
+cleanup:
+	if (!jis_null(reply_obj))
+		j_release(&reply_obj);
+
+	if (!jis_null(props_obj))
+		j_release(props_obj);
 
 	return true;
 }
