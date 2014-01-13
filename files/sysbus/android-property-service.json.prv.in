@@ -9,11 +9,6 @@
             "service":"com.android.properties",
             "inbound":["*"],
             "outbound":["*"]
-        },
-        {
-            "service":"com.android.properties",
-            "inbound":["*"],
-            "outbound":["*"]
         }
     ]
 }
