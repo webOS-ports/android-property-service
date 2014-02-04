@@ -1,0 +1,12 @@
+[Unit]
+Description=Simple service to retrieve, set and get notified about android properties.
+Requires=ls-hubd_private.service ls-hubd_public.service
+After=ls-hubd_private.service ls-hubd_public.service
+
+[Service]
+Type=simple
+Restart=on-failure
+ExecStart=/usr/sbin/android-property-service
+
+[Install]
+WantedBy=multi-user.target
