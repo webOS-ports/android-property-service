@@ -53,11 +53,6 @@ bool set_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 	return true;
 }
 
-struct property_list {
-	int count;
-	char** items;
-};
-
 static void record_prop(const char *key, const char *value, void *user_data)
 {
 	jvalue_ref props_obj = user_data;
@@ -73,12 +68,10 @@ bool get_all_properties_cb(LSHandle *handle, LSMessage *message, void *user_data
 {
 	jvalue_ref reply_obj = NULL;
 	jvalue_ref props_obj = NULL;
-	struct property_list list;
 
 	reply_obj = jobject_create();
 	props_obj = jarray_create(NULL);
 
-	memset(&list, 0, sizeof(struct property_list));
 	if (property_list(record_prop, props_obj) < 0) {
 		luna_service_message_reply_error_internal(handle, message);
 		goto cleanup;
@@ -93,9 +86,6 @@ bool get_all_properties_cb(LSHandle *handle, LSMessage *message, void *user_data
 cleanup:
 	if (!jis_null(reply_obj))
 		j_release(&reply_obj);
-
-	if (!jis_null(props_obj))
-		j_release(&props_obj);
 
 	return true;
 }
