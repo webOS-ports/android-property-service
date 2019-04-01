@@ -50,6 +50,14 @@ pkg_check_modules(LUNAPREFS REQUIRED luna-prefs)
 include_directories(${LUNAPREFS_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${LUNAPREFS_CFLAGS_OTHER})
 
+pkg_check_modules(ANDROID-PROPERTIES REQUIRED libandroid-properties)
+include_directories(${ANDROID-PROPERTIES_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${ANDROID-PROPERTIES_CFLAGS_OTHER})
+
+pkg_check_modules(ANDROID-HEADERS REQUIRED android-headers)
+include_directories(${ANDROID-HEADERS_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${ANDROID-HEADERS_CFLAGS_OTHER})
+
 file(GLOB SOURCE_FILES src/main.c src/property_service.c src/luna_service_utils.c)
 
 webos_add_compiler_flags(ALL -Wall)
@@ -58,8 +66,8 @@ webos_add_linker_options(ALL --no-undefined)
 add_executable(android-property-service ${SOURCE_FILES})
 target_link_libraries(android-property-service
     ${GLIB2_LDFLAGS} ${LUNASERVICE2_LDFLAGS} ${PBNJSON_C_LDFLAGS}
-    ${GIO2_LDFLAGS} ${GIO-UNIX_LDFLAGS} ${GOBJECT2_LDFLAGS} rt pthread
-    android-properties)
+    ${GIO2_LDFLAGS} ${GIO-UNIX_LDFLAGS} ${GOBJECT2_LDFLAGS} ${ANDROID-PROPERTIES_LDFLAGS} ${ANDROID-HEADERS_LDFLAGS} rt pthread
+)
 
 webos_build_daemon()
 webos_build_system_bus_files()
