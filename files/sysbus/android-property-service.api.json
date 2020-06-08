@@ -1,0 +1,7 @@
+{
+ "system": [
+	"com.android.properties/setProperty",
+	"com.android.properties/getProperty",
+	"com.android.properties/getAllProperties"
+    ]
+}

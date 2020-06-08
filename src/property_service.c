@@ -163,7 +163,7 @@ struct property_service* property_service_create()
 
 	LSErrorInit(&error);
 
-	if (!LSRegisterPubPriv("com.android.properties", &service->handle, false, &error)) {
+	if (!LSRegister("com.android.properties", &service->handle, &error)) {
 		g_error("Failed to register the luna service: %s", error.message);
 		LSErrorFree(&error);
 		goto error;
