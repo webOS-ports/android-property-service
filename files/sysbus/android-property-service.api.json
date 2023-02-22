@@ -1,7 +1,7 @@
 {
- "system": [
-	"com.android.properties/setProperty",
-	"com.android.properties/getProperty",
-	"com.android.properties/getAllProperties"
+    "android-property-service.operation": [
+        "com.android.properties/setProperty",
+        "com.android.properties/getProperty",
+        "com.android.properties/getAllProperties"
     ]
 }

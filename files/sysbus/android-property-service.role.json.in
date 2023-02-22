@@ -1,6 +1,7 @@
 {
     "exeName":"@WEBOS_INSTALL_SBINDIR@/android-property-service",
     "type": "privileged",
+    "trustLevel": "oem",
     "allowedNames": ["com.android.properties"],
     "permissions": [
         {
