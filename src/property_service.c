@@ -166,17 +166,20 @@ bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 		if (!jis_string(key_obj))
 			continue;
 
+		/* jstring_get returns a copy of the string which we own and have to
+		 * release again once we're done with it. */
 		key_buf = jstring_get(key_obj);
 
-		if (strlen(key_buf.m_str) == 0)
-			continue;
+		if (strlen(key_buf.m_str) > 0) {
+			property_get(key_buf.m_str, value, "");
 
-		property_get(key_buf.m_str, value, "");
+			prop_obj = jobject_create();
+			jobject_put(prop_obj, jstring_create(key_buf.m_str), jstring_create(value));
 
-		prop_obj = jobject_create();
-		jobject_put(prop_obj, jstring_create(key_buf.m_str), jstring_create(value));
+			jarray_append(props_obj, prop_obj);
+		}
 
-		jarray_append(props_obj, prop_obj);
+		jstring_free_buffer(key_buf);
 	}
 
 	jobject_put(reply_obj, J_CSTR_TO_JVAL("properties"), props_obj);
