@@ -21,7 +21,7 @@
 
 struct property_service;
 
-struct property_service* property_service_create();
+struct property_service* property_service_create(void);
 void property_service_free(struct property_service *service);
 
 #endif

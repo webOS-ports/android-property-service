@@ -2,6 +2,7 @@
     "android-property-service.operation": [
         "com.android.properties/setProperty",
         "com.android.properties/getProperty",
-        "com.android.properties/getAllProperties"
+        "com.android.properties/getAllProperties",
+        "com.android.properties/getVersion"
     ]
 }
