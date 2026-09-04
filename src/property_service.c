@@ -91,7 +91,51 @@ static void lookup_first_property(const char * const *keys, char *value)
 
 bool set_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 {
-	struct property_service *service = user_data;
+	jvalue_ref parsed_obj = NULL;
+	jvalue_ref key_obj = NULL;
+	jvalue_ref value_obj = NULL;
+	raw_buffer key_buf;
+	raw_buffer value_buf;
+	const char *payload;
+
+	payload = LSMessageGetPayload(message);
+	parsed_obj = luna_service_message_parse_and_validate(payload);
+	if (jis_null(parsed_obj)) {
+		luna_service_message_reply_error_bad_json(handle, message);
+		goto cleanup;
+	}
+
+	if (!jobject_get_exists(parsed_obj, J_CSTR_TO_BUF("key"), &key_obj) ||
+		!jis_string(key_obj) ||
+		!jobject_get_exists(parsed_obj, J_CSTR_TO_BUF("value"), &value_obj) ||
+		!jis_string(value_obj)) {
+		luna_service_message_reply_error_invalid_params(handle, message);
+		goto cleanup;
+	}
+
+	/* Both buffers are copies owned by us and have to be released again. */
+	key_buf = jstring_get(key_obj);
+	value_buf = jstring_get(value_obj);
+
+	/* Android silently rejects anything exceeding its limits, so tell the
+	 * caller what is wrong instead of failing with a generic error. */
+	if (strlen(key_buf.m_str) == 0)
+		luna_service_message_reply_custom_error(handle, message, "Property name must not be empty.");
+	else if (strlen(key_buf.m_str) >= PROP_NAME_MAX)
+		luna_service_message_reply_custom_error(handle, message, "Property name is too long.");
+	else if (strlen(value_buf.m_str) >= PROP_VALUE_MAX)
+		luna_service_message_reply_custom_error(handle, message, "Property value is too long.");
+	else if (property_set(key_buf.m_str, value_buf.m_str) < 0)
+		luna_service_message_reply_custom_error(handle, message, "Could not set property.");
+	else
+		luna_service_message_reply_success(handle, message);
+
+	jstring_free_buffer(key_buf);
+	jstring_free_buffer(value_buf);
+
+cleanup:
+	if (!jis_null(parsed_obj))
+		j_release(&parsed_obj);
 
 	return true;
 }
