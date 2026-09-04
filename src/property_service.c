@@ -38,13 +38,56 @@ struct property_service {
 bool set_property_cb(LSHandle *handle, LSMessage *message, void *user_data);
 bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data);
 bool get_all_properties_cb(LSHandle *handle, LSMessage *message, void *user_data);
+bool get_version_cb(LSHandle *handle, LSMessage *message, void *user_data);
 
 static LSMethod property_service_methods[]  = {
 	{ "setProperty", set_property_cb },
 	{ "getProperty", get_property_cb },
 	{ "getAllProperties", get_all_properties_cb },
+	{ "getVersion", get_version_cb },
 	{ NULL, NULL }
 };
+
+/* The vendor part of an Android system is not required to match the version of
+ * the platform it is running with, so the VNDK version is looked up separately
+ * from the Android version itself. Both are reported through different property
+ * names depending on the Android version the vendor image was built for, so try
+ * all known ones in order of preference. */
+static const char * const android_version_keys[] = {
+	"ro.build.version.release",
+	"ro.system.build.version.release",
+	NULL,
+};
+
+static const char * const android_sdk_version_keys[] = {
+	"ro.build.version.sdk",
+	"ro.system.build.version.sdk",
+	NULL,
+};
+
+static const char * const vndk_version_keys[] = {
+	"ro.vndk.version",
+	"ro.vendor.vndk.version",
+	"ro.product.vndk.version",
+	"ro.board.api_level",
+	"ro.board.first_api_level",
+	"ro.vendor.api_level",
+	NULL,
+};
+
+/* Stores the value of the first key which is set to a non empty value in value,
+ * which has to be at least PROP_VALUE_MAX bytes long. */
+static void lookup_first_property(const char * const *keys, char *value)
+{
+	int n;
+
+	for (n = 0; keys[n] != NULL; n++) {
+		property_get(keys[n], value, "");
+
+		if (strlen(value) > 0)
+			return;
+	}
+}
 
 bool set_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 {
@@ -148,6 +191,31 @@ cleanup:
 
 	if (!jis_null(reply_obj))
 		j_release(&reply_obj);
+
+	return true;
+}
+
+bool get_version_cb(LSHandle *handle, LSMessage *message, void *user_data)
+{
+	jvalue_ref reply_obj = NULL;
+	char value[PROP_VALUE_MAX];
+
+	reply_obj = jobject_create();
+
+	lookup_first_property(android_version_keys, value);
+	jobject_put(reply_obj, J_CSTR_TO_JVAL("androidVersion"), jstring_create(value));
+
+	lookup_first_property(android_sdk_version_keys, value);
+	jobject_put(reply_obj, J_CSTR_TO_JVAL("androidSdkVersion"), jstring_create(value));
+
+	lookup_first_property(vndk_version_keys, value);
+	jobject_put(reply_obj, J_CSTR_TO_JVAL("vndkVersion"), jstring_create(value));
+
+	jobject_put(reply_obj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
+
+	luna_service_message_validate_and_send(handle, message, reply_obj);
+
+	j_release(&reply_obj);
 
 	return true;
 }
