@@ -123,8 +123,7 @@ bool get_all_properties_cb(LSHandle *handle, LSMessage *message, void *user_data
 	jobject_put(reply_obj, J_CSTR_TO_JVAL("properties"), props_obj);
 	jobject_put(reply_obj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
 
-	if (!luna_service_message_validate_and_send(handle, message, reply_obj))
-		goto cleanup;
+	luna_service_message_validate_and_send(handle, message, reply_obj);
 
 cleanup:
 	if (!jis_null(reply_obj))
@@ -140,7 +139,8 @@ bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 	jvalue_ref reply_obj = NULL;
 	jvalue_ref props_obj = NULL;
 	jvalue_ref prop_obj = NULL;
-	char *payload, value[PROP_VALUE_MAX];
+	const char *payload;
+	char value[PROP_VALUE_MAX];
 	int n;
 	raw_buffer key_buf;
 
@@ -153,7 +153,7 @@ bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 
 	if (!jobject_get_exists(parsed_obj, J_CSTR_TO_BUF("keys"), &keys_obj) ||
 		!jis_array(keys_obj)) {
-		luna_service_message_reply_error_bad_json(handle, message);
+		luna_service_message_reply_error_invalid_params(handle, message);
 		goto cleanup;
 	}
 
@@ -185,8 +185,7 @@ bool get_property_cb(LSHandle *handle, LSMessage *message, void *user_data)
 	jobject_put(reply_obj, J_CSTR_TO_JVAL("properties"), props_obj);
 	jobject_put(reply_obj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(true));
 
-	if (!luna_service_message_validate_and_send(handle, message, reply_obj))
-		goto cleanup;
+	luna_service_message_validate_and_send(handle, message, reply_obj);
 
 cleanup:
 	if (!jis_null(parsed_obj))
@@ -223,7 +222,7 @@ bool get_version_cb(LSHandle *handle, LSMessage *message, void *user_data)
 	return true;
 }
 
-struct property_service* property_service_create()
+struct property_service* property_service_create(void)
 {
 	struct property_service *service;
 	LSError error;
@@ -278,7 +277,7 @@ void property_service_free(struct property_service *service)
 
 	LSErrorInit(&error);
 
-	if (service->handle != NULL && LSUnregister(service->handle, &error) < 0) {
+	if (service->handle != NULL && !LSUnregister(service->handle, &error)) {
 		g_error("Could not unregister service: %s", error.message);
 		LSErrorFree(&error);
 	}
