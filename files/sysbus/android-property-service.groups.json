@@ -1,0 +1,4 @@
+{
+    "allowedNames": ["com.android.properties"],
+    "android-property-service.operation": ["oem"]
+}
